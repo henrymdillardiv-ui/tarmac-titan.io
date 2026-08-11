@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 260" width="400" height="520" role="img" aria-labelledby="titleDesc">
+  <title id="titleDesc">Stickman character with a green shirt</title>
+  <desc>Simple scalable vector stick figure: round head, green shirt, arms and legs.</desc>
+
+  <!-- Head -->
+  <circle cx="100" cy="42" r="20" fill="#fff" stroke="#000" stroke-width="4" />
+
+  <!-- Shirt (green) -->
+  <path d="M70 80 L130 80 L115 120 L85 120 Z" fill="#27ae60" stroke="#1f8a4a" stroke-width="2" />
+
+  <!-- Body line below shirt -->
+  <path d="M100 120 L100 150" stroke="#000" stroke-width="4" stroke-linecap="round" />
+
+  <!-- Arms -->
+  <path d="M70 92 L40 120" stroke="#000" stroke-width="4" stroke-linecap="round" />
+  <path d="M130 92 L160 120" stroke="#000" stroke-width="4" stroke-linecap="round" />
+
+  <!-- Legs -->
+  <path d="M100 150 L75 220" stroke="#000" stroke-width="4" stroke-linecap="round" />
+  <path d="M100 150 L125 220" stroke="#000" stroke-width="4" stroke-linecap="round" />
+
+  <!-- Optional simple facial features -->
+  <circle cx="93" cy="38" r="2" fill="#000" />
+  <circle cx="107" cy="38" r="2" fill="#000" />
+  <path d="M94 48 Q100 52 106 48" stroke="#000" stroke-width="2" fill="none" stroke-linecap="round" />
+</svg>
