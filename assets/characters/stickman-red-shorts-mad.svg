@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 260" width="400" height="520" role="img" aria-labelledby="titleDesc">
+  <title id="titleDesc">Stickman character with red shorts and angry face</title>
+  <desc>Simple scalable vector stick figure: round head with angry expression, red shorts, arms and legs.</desc>
+
+  <!-- Head -->
+  <circle cx="100" cy="42" r="20" fill="#fff" stroke="#000" stroke-width="4" />
+
+  <!-- Angry eyebrows -->
+  <path d="M82 32 L92 36" stroke="#000" stroke-width="3" stroke-linecap="round" />
+  <path d="M118 36 L128 32" stroke="#000" stroke-width="3" stroke-linecap="round" />
+
+  <!-- Eyes -->
+  <circle cx="93" cy="38" r="2.5" fill="#000" />
+  <circle cx="107" cy="38" r="2.5" fill="#000" />
+
+  <!-- Mad mouth (frown with corners down) -->
+  <path d="M90 52 Q100 44 110 52" stroke="#000" stroke-width="3" fill="none" stroke-linecap="round" />
+
+  <!-- Shirt (light gray) -->
+  <path d="M70 80 L130 80 L115 120 L85 120 Z" fill="#e0e0e0" stroke="#bdbdbd" stroke-width="2" />
+
+  <!-- Body line below shirt -->
+  <path d="M100 120 L100 150" stroke="#000" stroke-width="4" stroke-linecap="round" />
+
+  <!-- Arms (fists slightly clenched) -->
+  <path d="M70 92 L40 120" stroke="#000" stroke-width="4" stroke-linecap="round" />
+  <circle cx="40" cy="120" r="4" fill="#000" />
+  <path d="M130 92 L160 120" stroke="#000" stroke-width="4" stroke-linecap="round" />
+  <circle cx="160" cy="120" r="4" fill="#000" />
+
+  <!-- Red shorts -->
+  <path d="M80 140 L120 140 L115 160 L85 160 Z" fill="#e74c3c" stroke="#c0392b" stroke-width="2" />
+
+  <!-- Legs (start under shorts) -->
+  <path d="M95 160 L80 220" stroke="#000" stroke-width="4" stroke-linecap="round" />
+  <path d="M105 160 L120 220" stroke="#000" stroke-width="4" stroke-linecap="round" />
+
+  <!-- Optional small feet -->
+  <ellipse cx="80" cy="222" rx="6" ry="3" fill="#000" />
+  <ellipse cx="120" cy="222" rx="6" ry="3" fill="#000" />
+</svg>
