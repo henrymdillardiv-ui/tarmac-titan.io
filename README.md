@@ -1,2 +1,2 @@
 # tarmac-titan.io
-This is TarmacTitan a fun online simulation which is totally not buns for car fans and future pilots.
+This is the best vehicle simulator of the century with high tech graphics and more customization then any other simulator in the world .
