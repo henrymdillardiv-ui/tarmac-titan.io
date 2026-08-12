@@ -1,0 +1,15 @@
+{
+  "name": "tarmac-titan.io",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Tarmac Titan — high fidelity vehicle simulator (static site placeholder)",
+  "scripts": {
+    "start": "npx http-server . -p ${PORT:-8080}",
+    "preview": "npx http-server . -p 8080"
+  },
+  "engines": {
+    "node": "18.x"
+  },
+  "author": "henrymdillardiv-ui",
+  "license": "MIT"
+}
