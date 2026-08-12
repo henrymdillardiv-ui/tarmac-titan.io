@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Tarmac Titan — 3D Demo Client</title>
+  <style>
+    html,body{height:100%;margin:0;background:#0b0f14;color:#e6eef6;overflow:hidden;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial}
+    #overlay{position:absolute;left:16px;top:16px;z-index:10}
+    #players{margin-top:8px;font-size:13px;opacity:0.9}
+    #hotbar{position:absolute;left:50%;transform:translateX(-50%);bottom:14px;display:flex;gap:8px;z-index:10}
+    .hot-slot{width:56px;height:56px;border-radius:8px;background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center}
+    #controls { position: absolute; right: 16px; bottom: 16px; z-index: 10; display:flex; gap:8px; flex-direction:column }
+    .ctl { width:56px; height:56px; border-radius:8px; background:rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center; font-weight:700 }
+    canvas{display:block}
+  </style>
+</head>
+<body>
+  <div id="overlay">
+    <div><strong>Tarmac Titan — 3D demo</strong></div>
+    <div id="players">players: 0</div>
+  </div>
+
+  <div id="hotbar" aria-hidden="false">
+    <div class="hot-slot">1</div><div class="hot-slot">2</div><div class="hot-slot">3</div>
+  </div>
+
+  <div id="controls">
+    <div id="btnUp" class="ctl">↑</div>
+    <div id="btnAction" class="ctl">●</div>
+    <div id="btnDown" class="ctl">↓</div>
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.0/socket.io.min.js"></script>
+  <script type="module">
+    import * as THREE from 'https://unpkg.com/three@0.154.0/build/three.module.js';
+    import { OrbitControls } from 'https://unpkg.com/three@0.154.0/examples/jsm/controls/OrbitControls.js';
+
+    const socket = io(); // connects to same origin
+    const playersEl = document.getElementById('players');
+
+    // Scene & renderer
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0b0f14);
+    const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 1000);
+    camera.position.set(0, 6, 12);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    document.body.appendChild(renderer.domElement);
+
+    // Controls (for dev)
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(0,1.2,0);
+    controls.update();
+
+    // Lights
+    const hemi = new THREE.HemisphereLight(0xffffee, 0x080820, 0.8);
+    scene.add(hemi);
+    const dir = new THREE.DirectionalLight(0xffffff, 0.6);
+    dir.position.set(5,10,7);
+    scene.add(dir);
+
+    // Ground
+    const groundMat = new THREE.MeshStandardMaterial({ color: 0x07101b, roughness: 0.9 });
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(120,120), groundMat);
+    ground.rotation.x = -Math.PI/2;
+    ground.position.y = 0;
+    scene.add(ground);
+
+    // Simple toon-like material
+    function createToonMaterial(color=0xffffff){
+      return new THREE.MeshToonMaterial({ color });
+    }
+
+    // Helper: create a low-poly stickman (thin limbs, sphere head)
+    function createStickman(color=0xffffff){
+      const g = new THREE.Group();
+      const mat = createToonMaterial(color);
+      const jointMat = createToonMaterial(0x111111);
+
+      // Head
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.35, 12, 8), mat);
+      head.position.y = 1.8;
+      g.add(head);
+
+      // Torso
+      const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.12,1.0,8), mat);
+      torso.position.y = 1.1;
+      g.add(torso);
+
+      // Limb factory
+      function limb(length){
+        const limbGeo = new THREE.CylinderGeometry(0.07,0.07,length,8);
+        const m = new THREE.Mesh(limbGeo, mat);
+        return m;
+      }
+
+      // Arms
+      const leftArm = limb(0.9);
+      leftArm.position.set(-0.35,1.3,0);
+      leftArm.rotation.z = Math.PI/6;
+      g.add(leftArm);
+
+      const rightArm = limb(0.9);
+      rightArm.position.set(0.35,1.3,0);
+      rightArm.rotation.z = -Math.PI/6;
+      g.add(rightArm);
+
+      // Legs
+      const leftLeg = limb(1.0);
+      leftLeg.position.set(-0.12,0.25,0);
+      leftLeg.rotation.z = -Math.PI/30;
+      g.add(leftLeg);
+
+      const rightLeg = limb(1.0);
+      rightLeg.position.set(0.12,0.25,0);
+      rightLeg.rotation.z = Math.PI/30;
+      g.add(rightLeg);
+
+      // Add small joint spheres for style
+      const js = new THREE.Mesh(new THREE.SphereGeometry(0.08,8,6), jointMat);
+      js.position.set(-0.35,1.3,0);
+      g.add(js);
+      const js2 = js.clone(); js2.position.x = 0.35; g.add(js2);
+
+      return g;
+    }
+
+    // Capsule avatar (test)
+    function createCapsule(color=0x66ccff){
+      const g = new THREE.Group();
+      const mat = createToonMaterial(color);
+      // Cylinder body
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.35,0.35,1.2,12), mat);
+      body.position.y = 1.0;
+      g.add(body);
+      // Hemispheres
+      const top = new THREE.Mesh(new THREE.SphereGeometry(0.35,12,8), mat);
+      top.position.y = 1.6; g.add(top);
+      const bot = new THREE.Mesh(new THREE.SphereGeometry(0.35,12,8), mat);
+      bot.position.y = 0.4; g.add(bot);
+      return g;
+    }
+
+    // Avatar management
+    const avatars = new Map(); // id -> { mesh, type, position }
+    const positions = new Map(); // id -> {x,y,z}
+
+    function addAvatar(id, opts={ type:'stick', color: 0xffffff }){
+      if(avatars.has(id)) return avatars.get(id).mesh;
+      let mesh;
+      if(opts.type === 'capsule') mesh = createCapsule(opts.color);
+      else mesh = createStickman(opts.color);
+      mesh.position.set((Math.random()-0.5)*4, 0, (Math.random()-0.5)*4);
+      scene.add(mesh);
+      avatars.set(id, { mesh, type: opts.type });
+      positions.set(id, { x: mesh.position.x, y: mesh.position.y, z: mesh.position.z });
+      return mesh;
+    }
+
+    function removeAvatar(id){
+      const a = avatars.get(id);
+      if(a){ scene.remove(a.mesh); avatars.delete(id); positions.delete(id); }
+    }
+
+    function updateAvatarPosition(id, pos){
+      const a = avatars.get(id);
+      if(!a) return;
+      a.mesh.position.set(pos.x, pos.y, pos.z);
+      positions.set(id, { x: pos.x, y: pos.y, z: pos.z });
+    }
+
+    // Local player id (use socket id once connected)
+    let localId = null;
+
+    // Handle presence list from server
+    socket.on('presence', (list) => {
+      // list is array of presence objects {id, meta, joinedAt}
+      playersEl.textContent = 'players: ' + (Array.isArray(list) ? list.length : 0);
+      const ids = new Set((Array.isArray(list) ? list.map(p => p.id) : []));
+
+      // Add missing avatars
+      ids.forEach(id => {
+        if(!avatars.has(id)){
+          // Use capsule for testing users with meta.testCapsule true, otherwise stickman
+          const meta = (Array.isArray(list) ? list.find(p=>p.id===id).meta : {}) || {};
+          addAvatar(id, { type: meta && meta.testCapsule ? 'capsule' : 'stick', color: id===localId ? 0x88ff88 : 0xffffff });
+        }
+      });
+
+      // Remove avatars no longer present
+      for(const id of Array.from(avatars.keys())){
+        if(!ids.has(id)) removeAvatar(id);
+      }
+    });
+
+    // Handle remote move events
+    socket.on('player:moved', (payload) => {
+      if(!payload || !payload.id) return;
+      const id = payload.id;
+      const s = payload.state || {};
+      if(!avatars.has(id)) addAvatar(id, { type: 'stick' });
+      // payload.state expected to have x,y,z
+      if(typeof s.x === 'number'){
+        updateAvatarPosition(id, { x: s.x, y: s.y || 0, z: s.z || 0 });
+      }
+    });
+
+    // Connect and join
+    socket.on('connect', () => {
+      localId = socket.id;
+      socket.emit('join', 'lobby', { platform: navigator.userAgent, testCapsule: false });
+      // add local avatar immediately
+      addAvatar(localId, { type: 'stick', color: 0x88ff88 });
+    });
+
+    socket.on('disconnect', () => {
+      // keep local avatar but mark disconnected
+      console.warn('disconnected from server');
+    });
+
+    // Simple movement controls: keyboard + buttons
+    let localPos = { x: 0, y: 0, z: 0 };
+    const speed = 0.25;
+
+    function sendMove(){
+      socket.emit('move', { roomId: 'lobby', state: { x: localPos.x, y: localPos.y, z: localPos.z } });
+    }
+
+    function moveDir(dir){
+      if(dir === 'up') localPos.z -= speed;
+      if(dir === 'down') localPos.z += speed;
+      if(dir === 'left') localPos.x -= speed;
+      if(dir === 'right') localPos.x += speed;
+      if(dir === 'action') localPos.y = Math.sin(Date.now()/200) * 0.2; // small bob for action
+      updateAvatarPosition(localId, localPos);
+      sendMove();
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if(e.key === 'w' || e.key === 'ArrowUp') moveDir('up');
+      if(e.key === 's' || e.key === 'ArrowDown') moveDir('down');
+      if(e.key === 'a' || e.key === 'ArrowLeft') moveDir('left');
+      if(e.key === 'd' || e.key === 'ArrowRight') moveDir('right');
+      if(e.key === ' ') moveDir('action');
+    });
+
+    document.getElementById('btnUp').addEventListener('click', ()=> moveDir('up'));
+    document.getElementById('btnDown').addEventListener('click', ()=> moveDir('down'));
+    document.getElementById('btnAction').addEventListener('click', ()=> moveDir('action'));
+
+    // Animation loop
+    function animate(){
+      requestAnimationFrame(animate);
+      // simple idle sway for remote avatars
+      const t = Date.now() * 0.001;
+      avatars.forEach((val, id) => {
+        if(id === localId) return; // local handled by controls
+        const mesh = val.mesh;
+        mesh.rotation.y = Math.sin(t + id.length) * 0.1;
+      });
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    // Handle resize
+    window.addEventListener('resize', () => {
+      camera.aspect = innerWidth/innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+    });
+  </script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-// Minimal secure Express + Socket.IO bootstrap
+const path = require('path');
 require('dotenv').config();
 const express = require('express');
 const http = require('http');
@@ -13,6 +13,10 @@ const { Server } = require('socket.io');
 const app = express();
 app.use(helmet()); // secure headers
 
+// Static directories
+const CLIENT_DIR = path.join(__dirname, '..', 'client');
+const DOCS_DIR = path.join(__dirname, '..', 'docs');
+
 // CORS: whitelist in production; allow all in local dev (change via env)
 const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:3000,http://127.0.0.1:3000').split(',');
 app.use(cors({
@@ -26,6 +30,10 @@ app.use(cors({
 
 app.use(express.json());
 app.use(cookieParser());
+
+// Serve static client assets and docs
+app.use(express.static(CLIENT_DIR));
+app.use('/docs', express.static(DOCS_DIR));
 
 // Basic rate limit for HTTP endpoints
 const apiLimiter = rateLimit({
@@ -101,6 +109,14 @@ app.post('/api/purchase',
   }
 );
 
+// If a request does not match API or static file, serve client index.html (for SPA)
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api') || req.path.startsWith('/docs')) return next();
+  res.sendFile(path.join(CLIENT_DIR, 'index.html'), (err) => {
+    if (err) next();
+  });
+});
+
 // Create HTTP server and attach Socket.IO
 const port = parseInt(process.env.PORT || '3000', 10);
 const server = http.createServer(app);
@@ -110,7 +126,6 @@ const io = new Server(server, {
     methods: ['GET','POST'],
     credentials: true,
   },
-  // pingInterval / pingTimeout can be tuned for mobile/slow networks
 });
 
 // Simple in-memory room state (for demo only)
