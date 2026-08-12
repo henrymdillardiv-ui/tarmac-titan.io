@@ -9,6 +9,7 @@ const { body, query, validationResult } = require('express-validator');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const { Server } = require('socket.io');
+const path = require('path');
 
 const app = express();
 app.use(helmet()); // secure headers
@@ -26,6 +27,9 @@ app.use(cors({
 
 app.use(express.json());
 app.use(cookieParser());
+
+// Serve static client files (HTML, JS, CSS, assets)
+app.use(express.static(path.join(__dirname, '../client')));
 
 // Basic rate limit for HTTP endpoints
 const apiLimiter = rateLimit({
@@ -100,6 +104,11 @@ app.post('/api/purchase',
     });
   }
 );
+
+// Fallback: serve index.html for SPA routing (PWA support)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/index.html'));
+});
 
 // Create HTTP server and attach Socket.IO
 const port = parseInt(process.env.PORT || '3000', 10);
